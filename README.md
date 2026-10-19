@@ -1,16 +1,66 @@
-# React + Vite
+# 🌱 Faidat Code Academy
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Learn to code, one step at a time.**
 
-Currently, two official plugins are available:
+Faidat Code Academy is a beginner-friendly web development learning platform designed to help learners build their coding skills through step-by-step lessons, interactive quizzes, and hands-on practice.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## ✨ Features
 
-## React Compiler
+- 📚 Beginner-friendly HTML lessons
+- 🧠 Interactive quizzes with instant feedback
+- 🎨 A welcoming, responsive learning interface
+- 🌱 A learning experience designed to grow with you
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🛠️ Built With
 
-## Expanding the ESLint configuration
+- React
+- Vite
+- JavaScript
+- Tailwind CSS v4
+- React Router
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 🚀 Getting Started
+
+### Prerequisites
+
+Install [Node.js](https://nodejs.org/) before running the project.
+
+### Installation
+
+1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/Benefit-ola/faidat-code-academy.git
+   ```
+
+2. Enter the project directory:
+
+   ```bash
+   cd faidat-code-academy
+   ```
+
+3. Install dependencies:
+
+   ```bash
+   npm install
+   ```
+
+4. Start the development server:
+
+   ```bash
+   npm run dev
+   ```
+
+5. Open the local URL shown in your terminal.
+
+## 📖 Project Status
+
+Faidat Code Academy is under active development. New lessons and learning features will be added as the project grows.
+
+## 🎯 Vision
+
+To make learning web development approachable, practical, and encouraging for beginners.
+
+---
+
+Built with 💗 by Faidat Code Academy.
