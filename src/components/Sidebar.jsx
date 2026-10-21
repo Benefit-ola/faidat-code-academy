@@ -2,9 +2,10 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
 
-const Sidebar = () => {
-  const [collapsed, setCollapsed] = useState(false);
+const Sidebar = ({ collapsed, onToggle }) => {
+  
   const [mobileOpen, setMobileOpen] = useState(false);
+  
 
   const links = [
     { name: "Dashboard", path: "/", icon: "🏠" },
@@ -48,7 +49,7 @@ const Sidebar = () => {
           )}
 
           <button
-            onClick={() => setCollapsed(!collapsed)}
+            onClick={onToggle}
             className="hidden rounded-lg p-2 hover:bg-white/10 md:block"
             aria-label="Collapse or expand sidebar"
           >
