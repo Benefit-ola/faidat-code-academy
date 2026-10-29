@@ -1,6 +1,5 @@
-
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 const COMPLETED_KEY = "faidat-html-completed-lessons";
 
@@ -55,11 +54,47 @@ const lessons = [
   },
 ];
 
+// Visual and text settings for each lesson state.
+const STATUS_STYLES = {
+  completed: {
+    badge: "✓ Completed",
+    badgeClass: "bg-[#D9F3E7] text-[#1F6B52]",
+    cardClass: "border-green-200 shadow-sm",
+    buttonLabel: "Review Lesson",
+    buttonClass: "bg-[#D9F3E7] text-[#1F6B52] hover:bg-[#BCE8D5]",
+  },
+  next: {
+    badge: "Up next",
+    badgeClass: "bg-pink-100 text-pink-800",
+    cardClass: "border-pink-300 shadow-md",
+    buttonLabel: "Start Lesson",
+    buttonClass: "bg-pink-600 text-white hover:bg-pink-700",
+  },
+  available: {
+    badge: "Available",
+    badgeClass: "bg-pink-100 text-pink-800",
+    cardClass: "border-[#F0E3ED] shadow-sm",
+    buttonLabel: "Start Lesson",
+    buttonClass: "bg-pink-600 text-white hover:bg-pink-700",
+  },
+  locked: {
+    badge: "🔒 Locked",
+    badgeClass: "bg-gray-100 text-gray-700",
+    cardClass: "border-[#F0E3ED] bg-[#FBF8FA] shadow-sm",
+    buttonLabel: "Complete previous lesson",
+    buttonClass: "bg-gray-200 text-gray-600",
+  },
+};
+
+const focusRing =
+  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink-600";
+
+const lessonPath = (id) => `/courses/html/lesson-${id}`;
+
+// Read and validate saved lesson progress.
 function readCompletedLessons() {
   try {
-    const saved = JSON.parse(
-      localStorage.getItem(COMPLETED_KEY) || "[]"
-    );
+    const saved = JSON.parse(localStorage.getItem(COMPLETED_KEY) || "[]");
 
     if (!Array.isArray(saved)) return [];
 
@@ -78,41 +113,38 @@ function readCompletedLessons() {
 }
 
 const HTMLLessonsListPage = () => {
-  const navigate = useNavigate();
-
   const [completedLessons, setCompletedLessons] = useState(
     readCompletedLessons
   );
 
+  // Keep the list synchronised with saved progress.
   useEffect(() => {
-    const syncProgress = () => {
-      setCompletedLessons(readCompletedLessons());
+    const syncProgress = () => setCompletedLessons(readCompletedLessons());
+
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") syncProgress();
     };
 
     window.addEventListener("focus", syncProgress);
     window.addEventListener("storage", syncProgress);
-    document.addEventListener("visibilitychange", syncProgress);
+    document.addEventListener("visibilitychange", onVisibility);
 
     return () => {
       window.removeEventListener("focus", syncProgress);
       window.removeEventListener("storage", syncProgress);
-      document.removeEventListener(
-        "visibilitychange",
-        syncProgress
-      );
+      document.removeEventListener("visibilitychange", onVisibility);
     };
   }, []);
 
   const completedCount = completedLessons.length;
-
-  const progress = Math.round(
-    (completedCount / lessons.length) * 100
-  );
+  const totalLessons = lessons.length;
+  const progress = Math.round((completedCount / totalLessons) * 100);
+  const allCompleted = completedCount === totalLessons;
 
   // A lesson unlocks when the previous lesson is completed.
-  // Lesson 1 is unlocked from the beginning.
-  // Previously completed lessons remain available for revision.
-  const lessonStatuses = lessons.map((lesson) => {
+  // Lesson 1 is unlocked from the beginning, and completed lessons
+  // always stay available for revision.
+  const unlockedLessons = lessons.map((lesson) => {
     const isCompleted = completedLessons.includes(lesson.id);
 
     const isUnlocked =
@@ -120,83 +152,84 @@ const HTMLLessonsListPage = () => {
       isCompleted ||
       completedLessons.includes(lesson.id - 1);
 
-    return {
-      ...lesson,
-      isCompleted,
-      isUnlocked,
-    };
+    return { ...lesson, isCompleted, isUnlocked };
+  });
+
+  const nextLesson = unlockedLessons.find(
+    (lesson) => lesson.isUnlocked && !lesson.isCompleted
+  );
+
+  const lessonStatuses = unlockedLessons.map((lesson) => {
+    let status = "locked";
+
+    if (lesson.isCompleted) status = "completed";
+    else if (nextLesson?.id === lesson.id) status = "next";
+    else if (lesson.isUnlocked) status = "available";
+
+    return { ...lesson, status };
   });
 
   const availableCount = lessonStatuses.filter(
     (lesson) => lesson.isUnlocked
   ).length;
 
-  const nextLesson = lessonStatuses.find(
-    (lesson) => lesson.isUnlocked && !lesson.isCompleted
-  );
-
-  const allCompleted = completedCount === lessons.length;
-
-  const openLesson = (lesson) => {
-    if (!lesson.isUnlocked) return;
-
-    navigate(`/courses/html/lesson-${lesson.id}`);
-  };
-
   return (
-    <div className="min-h-screen bg-[#FFFAF3] p-5 pt-20 md:p-10">
+    <main className="min-h-screen bg-[#FFFAF3] p-5 pt-20 md:p-10">
       <div className="mx-auto max-w-5xl">
-        <button
-          type="button"
-          onClick={() => navigate("/courses/html")}
-          className="mb-6 font-semibold text-pink-600 hover:text-pink-800"
+        <Link
+          to="/courses/html"
+          className={`mb-6 inline-block rounded font-semibold text-pink-700 hover:text-pink-900 ${focusRing}`}
         >
           ← Back to HTML Fundamentals
-        </button>
+        </Link>
 
-        <p className="text-sm font-semibold tracking-wide text-pink-600">
-          FAIDAT CODE ACADEMY / HTML FUNDAMENTALS
+        <p className="text-sm font-semibold tracking-wide text-pink-700">
+          CODE GARDEN / HTML FUNDAMENTALS
         </p>
 
         <h1 className="mt-4 text-3xl font-bold text-[#42213D] md:text-4xl">
-          Your HTML Learning Journey 🌱
+          Your HTML Learning Journey <span aria-hidden="true">🌱</span>
         </h1>
 
         <p className="mt-3 max-w-2xl leading-7 text-[#65545F]">
-          Learn one concept at a time. Complete each lesson's quiz
-          and coding exercise to unlock your next step.
+          Learn one concept at a time. Complete each lesson's quiz and
+          coding exercise to unlock your next step.
         </p>
 
         {/* Course progress */}
-        <section className="mt-8 rounded-2xl bg-[#42213D] p-6 text-white">
-          <p className="text-sm font-semibold text-pink-200">
+        <section
+          aria-labelledby="path-heading"
+          className="mt-8 rounded-2xl bg-[#42213D] p-6 text-white"
+        >
+          <h2
+            id="path-heading"
+            className="text-sm font-semibold text-pink-200"
+          >
             YOUR LEARNING PATH
-          </p>
+          </h2>
 
-          <div className="mt-4 grid grid-cols-2 gap-5 sm:grid-cols-3">
+          <dl className="mt-4 grid grid-cols-2 gap-5 sm:grid-cols-3">
             <div>
-              <p className="text-2xl font-bold">{lessons.length}</p>
-              <p className="mt-1 text-sm text-white/75">
-                Total lessons
-              </p>
+              <dd className="text-2xl font-bold">{totalLessons}</dd>
+              <dt className="mt-1 text-sm text-white/80">Total lessons</dt>
             </div>
 
             <div>
-              <p className="text-2xl font-bold">{availableCount}</p>
-              <p className="mt-1 text-sm text-white/75">
+              <dd className="text-2xl font-bold">{availableCount}</dd>
+              <dt className="mt-1 text-sm text-white/80">
                 Unlocked lessons
-              </p>
+              </dt>
             </div>
 
             <div className="col-span-2 sm:col-span-1">
-              <p className="text-2xl font-bold">
-                {completedCount}/{lessons.length}
-              </p>
-              <p className="mt-1 text-sm text-white/75">
+              <dd className="text-2xl font-bold">
+                {completedCount}/{totalLessons}
+              </dd>
+              <dt className="mt-1 text-sm text-white/80">
                 Lessons completed
-              </p>
+              </dt>
             </div>
-          </div>
+          </dl>
 
           <div className="mt-6">
             <div className="mb-2 flex justify-between text-sm">
@@ -220,97 +253,88 @@ const HTMLLessonsListPage = () => {
 
             <p className="mt-3 text-sm text-white/80">
               {allCompleted
-                ? "Amazing! You've completed all eight HTML lessons. 🎉"
-                : `You've completed ${completedCount} of ${lessons.length} lessons. Keep growing!`}
+                ? `Amazing! You've completed all ${totalLessons} HTML lessons. 🎉`
+                : `You've completed ${completedCount} of ${totalLessons} lessons. Keep growing!`}
             </p>
           </div>
         </section>
 
         {/* Continue learning */}
         {nextLesson && (
-          <section className="mt-6 rounded-2xl border border-pink-200 bg-white p-5 shadow-sm">
-            <p className="text-sm font-semibold text-pink-600">
+          <section
+            aria-labelledby="next-step-heading"
+            className="mt-6 rounded-2xl border border-pink-200 bg-white p-5 shadow-sm"
+          >
+            <p
+              id="next-step-heading"
+              className="text-sm font-semibold text-pink-700"
+            >
               YOUR NEXT STEP
             </p>
 
             <h2 className="mt-2 text-xl font-bold text-[#42213D]">
-              {nextLesson.title}
+              Lesson {nextLesson.id}: {nextLesson.title}
             </h2>
 
             <p className="mt-2 leading-6 text-[#65545F]">
               {nextLesson.description}
             </p>
 
-            <button
-              type="button"
-              onClick={() => openLesson(nextLesson)}
-              className="mt-4 rounded-xl bg-pink-600 px-5 py-3 font-semibold text-white transition hover:bg-pink-700"
+            <Link
+              to={lessonPath(nextLesson.id)}
+              className={`mt-4 inline-flex items-center gap-2 rounded-xl bg-pink-600 px-5 py-3 font-semibold text-white transition hover:bg-pink-700 ${focusRing}`}
             >
-              Continue Learning →
-            </button>
+              {completedCount > 0 ? "Continue Learning" : "Start Learning"}
+              <span aria-hidden="true">→</span>
+            </Link>
           </section>
         )}
 
         {allCompleted && (
           <section className="mt-6 rounded-2xl border border-green-200 bg-[#D9F3E7] p-5">
-            <h2 className="text-xl font-bold text-[#246B50]">
-              HTML Foundations Complete! 🎓
+            <h2 className="text-xl font-bold text-[#1F6B52]">
+              HTML Foundations Complete! <span aria-hidden="true">🎓</span>
             </h2>
 
-            <p className="mt-2 leading-6 text-[#246B50]">
-              You've finished every lesson. You can now revisit
-              any topic whenever you need a refresher.
+            <p className="mt-2 leading-6 text-[#1F6B52]">
+              You've finished every lesson. You can now revisit any
+              topic whenever you need a refresher.
             </p>
           </section>
         )}
 
         {/* Lesson cards */}
-        <section className="mt-8">
-          <h2 className="text-2xl font-bold text-[#42213D]">
+        <section aria-labelledby="lessons-heading" className="mt-8">
+          <h2
+            id="lessons-heading"
+            className="text-2xl font-bold text-[#42213D]"
+          >
             Choose your lesson
           </h2>
 
           <p className="mt-2 text-[#65545F]">
-            Complete lessons in order to unlock new topics.
-            Completed lessons stay available for revision.
+            Complete lessons in order to unlock new topics. Completed
+            lessons stay available for revision.
           </p>
 
-          <div className="mt-5 grid gap-5 sm:grid-cols-2">
+          <ol className="mt-5 grid gap-5 sm:grid-cols-2">
             {lessonStatuses.map((lesson) => {
-              const { isCompleted, isUnlocked } = lesson;
-
-              const isNext = nextLesson?.id === lesson.id;
+              const styles = STATUS_STYLES[lesson.status];
 
               return (
-                <article
+                <li
                   key={lesson.id}
-                  className={`rounded-2xl border bg-white p-5 transition ${
-                    isCompleted
-                      ? "border-green-200 shadow-sm"
-                      : isNext
-                        ? "border-pink-300 shadow-md"
-                        : "border-[#F0E3ED] opacity-75 shadow-sm"
-                  }`}
+                  className={`flex flex-col rounded-2xl border bg-white p-5 transition ${styles.cardClass}`}
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <span className="text-sm font-semibold text-pink-600">
+                    <span className="text-sm font-semibold text-pink-700">
                       LESSON {String(lesson.id).padStart(2, "0")}
                     </span>
 
                     <span
-                      className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                        isCompleted
-                          ? "bg-[#D9F3E7] text-[#287D61]"
-                          : isUnlocked
-                            ? "bg-pink-100 text-pink-700"
-                            : "bg-gray-100 text-gray-600"
-                      }`}
+                      className={`rounded-full px-3 py-1 text-xs font-semibold ${styles.badgeClass}`}
                     >
-                      {isCompleted
-                        ? "✓ Completed"
-                        : isUnlocked
-                          ? "Available"
-                          : "🔒 Locked"}
+                      {styles.badge}
                     </span>
                   </div>
 
@@ -318,48 +342,45 @@ const HTMLLessonsListPage = () => {
                     {lesson.title}
                   </h3>
 
-                  <p className="mt-2 leading-6 text-[#65545F]">
+                  <p className="mt-2 flex-1 leading-6 text-[#65545F]">
                     {lesson.description}
                   </p>
 
-                  {!isUnlocked && (
-                    <p className="mt-3 text-sm text-[#65545F]">
-                      Complete Lesson {lesson.id - 1} to unlock this lesson.
-                    </p>
-                  )}
+                  {lesson.isUnlocked ? (
+                    <Link
+                      to={lessonPath(lesson.id)}
+                      aria-label={`${styles.buttonLabel} ${lesson.id}: ${lesson.title}`}
+                      className={`mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 font-semibold transition ${styles.buttonClass} ${focusRing}`}
+                    >
+                      {styles.buttonLabel}
+                      <span aria-hidden="true">→</span>
+                    </Link>
+                  ) : (
+                    <>
+                      <p className="mt-3 text-sm text-[#65545F]">
+                        Complete Lesson {lesson.id - 1} to unlock this
+                        lesson.
+                      </p>
 
-                  <button
-                    type="button"
-                    onClick={() => openLesson(lesson)}
-                    disabled={!isUnlocked}
-                    aria-label={
-                      isUnlocked
-                        ? `${isCompleted ? "Review" : "Start"} ${lesson.title}`
-                        : `${lesson.title} is locked`
-                    }
-                    className={`mt-5 w-full rounded-xl px-4 py-3 font-semibold transition disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-500 ${
-                      isCompleted
-                        ? "bg-[#D9F3E7] text-[#287D61] hover:bg-[#BCE8D5]"
-                        : isUnlocked
-                          ? "bg-pink-600 text-white hover:bg-pink-700"
-                          : "bg-gray-200 text-gray-500"
-                    }`}
-                  >
-                    {isCompleted
-                      ? "Review Lesson →"
-                      : isUnlocked
-                        ? "Start Lesson →"
-                        : "🔒 Complete Previous Lesson"}
-                  </button>
-                </article>
+                      <button
+                        type="button"
+                        disabled
+                        className={`mt-3 w-full cursor-not-allowed rounded-xl px-4 py-3 font-semibold ${styles.buttonClass}`}
+                      >
+                        <span aria-hidden="true">🔒 </span>
+                        {styles.buttonLabel}
+                      </button>
+                    </>
+                  )}
+                </li>
               );
             })}
-          </div>
+          </ol>
         </section>
 
         <section className="mt-8 rounded-2xl bg-[#F3E8F0] p-6">
           <h2 className="text-xl font-bold text-[#42213D]">
-            Progress, not perfection. 🌱
+            Progress, not perfection. <span aria-hidden="true">🌱</span>
           </h2>
 
           <p className="mt-2 leading-7 text-[#65545F]">
@@ -368,7 +389,7 @@ const HTMLLessonsListPage = () => {
           </p>
         </section>
       </div>
-    </div>
+    </main>
   );
 };
 
