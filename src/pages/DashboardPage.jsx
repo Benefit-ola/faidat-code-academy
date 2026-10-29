@@ -1,327 +1,610 @@
 
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+
+const HTML_LESSON_COUNT = 8;
+const PROGRESS_KEY = "faidat-html-completed-lessons";
+
+// Read and validate saved lesson progress.
+const readCompletedLessons = () => {
+  try {
+    const saved = JSON.parse(
+      localStorage.getItem(PROGRESS_KEY) || "[]"
+    );
+
+    if (!Array.isArray(saved)) return [];
+
+    return [
+      ...new Set(
+        saved.filter(
+          (id) =>
+            Number.isInteger(id) &&
+            id >= 1 &&
+            id <= HTML_LESSON_COUNT
+        )
+      ),
+    ];
+  } catch {
+    return [];
+  }
+};
+
+const courses = [
+  {
+    id: "html",
+    title: "HTML Fundamentals",
+    subtitle: "Build the structure",
+    icon: "🌐",
+    level: "Beginner",
+    lessons: 8,
+    description:
+      "Learn how to structure webpages with headings, paragraphs, links, images, lists, and forms.",
+    outcome: "Create the foundation of your own website.",
+    color: "bg-orange-50",
+    iconColor: "text-orange-600",
+    tag: "AVAILABLE NOW",
+    available: true,
+    path: "/courses/html",
+  },
+  {
+    id: "css",
+    title: "CSS Styling",
+    subtitle: "Bring designs to life",
+    icon: "🎨",
+    level: "Beginner",
+    lessons: 10,
+    description:
+      "Explore colours, typography, spacing, layouts, and responsive web design.",
+    outcome: "Transform plain webpages into polished designs.",
+    color: "bg-blue-50",
+    iconColor: "text-blue-600",
+    tag: "COMING SOON",
+    available: false,
+  },
+  {
+    id: "javascript",
+    title: "JavaScript Basics",
+    subtitle: "Add interactivity",
+    icon: "⚡",
+    level: "Beginner",
+    lessons: 12,
+    description:
+      "Discover variables, functions, conditions, events, and programming logic.",
+    outcome: "Build websites that respond to user actions.",
+    color: "bg-amber-50",
+    iconColor: "text-amber-600",
+    tag: "COMING SOON",
+    available: false,
+  },
+];
+
+const mindset = [
+  {
+    icon: "🌱",
+    title: "Learn one step at a time",
+    description:
+      "Break new topics into manageable lessons. Understanding one concept is better than rushing through ten.",
+  },
+  {
+    icon: "🧠",
+    title: "Understand the why",
+    description:
+      "Ask questions, predict what your code will do, and explain concepts in your own words.",
+  },
+  {
+    icon: "🛠️",
+    title: "Practise by building",
+    description:
+      "Turn lessons into small exercises and projects. Practical experience makes concepts stick.",
+  },
+  {
+    icon: "💪",
+    title: "Treat mistakes as feedback",
+    description:
+      "Read error messages, investigate problems, and try again. Debugging is a valuable developer skill.",
+  },
+];
+
+const skills = [
+  "Understand the structure of a webpage.",
+  "Style websites with colours, spacing, and layouts.",
+  "Add interactive features with JavaScript.",
+  "Build projects for a beginner portfolio.",
+];
 
 const DashboardPage = () => {
   const navigate = useNavigate();
 
-  const courses = [
-    {
-      id: "html",
-      title: "HTML Fundamentals",
-      icon: "🌐",
-      level: "Beginner",
-      lessons: 8,
-      description:
-        "Learn how webpages are structured with headings, paragraphs, images, links, lists, and forms.",
-      outcome:
-        "Build the foundation for your first webpage.",
-      path: "/courses/html",
-      color: "bg-orange-50",
-      tag: "START HERE",
-    },
-    {
-      id: "css",
-      title: "CSS Styling",
-      icon: "🎨",
-      level: "Beginner",
-      lessons: 10,
-      description:
-        "Discover colours, typography, spacing, layouts, and responsive design.",
-      outcome:
-        "Turn plain webpages into beautiful designs.",
-      path: "/courses/css",
-      color: "bg-blue-50",
-      tag: "DESIGN",
-    },
-    {
-      id: "javascript",
-      title: "JavaScript Basics",
-      icon: "⚡",
-      level: "Beginner",
-      lessons: 12,
-      description:
-        "Explore variables, functions, conditions, and programming logic.",
-      outcome:
-        "Make websites interactive and responsive to users.",
-      path: "/courses/javascript",
-      color: "bg-yellow-50",
-      tag: "INTERACT",
-    },
-  ];
+  const [completedLessons, setCompletedLessons] = useState(
+    readCompletedLessons
+  );
 
-  const mindset = [
+  // Keep dashboard progress synchronized with saved progress.
+  useEffect(() => {
+    const syncProgress = () => {
+      setCompletedLessons(readCompletedLessons());
+    };
+
+    window.addEventListener("focus", syncProgress);
+    document.addEventListener("visibilitychange", syncProgress);
+    window.addEventListener("storage", syncProgress);
+
+    return () => {
+      window.removeEventListener("focus", syncProgress);
+      document.removeEventListener(
+        "visibilitychange",
+        syncProgress
+      );
+      window.removeEventListener("storage", syncProgress);
+    };
+  }, []);
+
+  const completedCount = completedLessons.length;
+
+  const progressPercentage = Math.round(
+    (completedCount / HTML_LESSON_COUNT) * 100
+  );
+
+  const achievements = [
     {
+      title: "First steps",
+      description: "Complete your first HTML lesson.",
+      earned: completedCount >= 1,
       icon: "🌱",
-      title: "Start small",
-      description:
-        "You don't have to understand everything on your first day. Learn one concept at a time.",
     },
     {
-      icon: "🧠",
-      title: "Understand, don't memorise",
-      description:
-        "Ask questions, experiment with code, and learn why things work.",
+      title: "Growing stronger",
+      description: "Complete four HTML lessons.",
+      earned: completedCount >= 4,
+      icon: "🌿",
     },
     {
-      icon: "🛠️",
-      title: "Practise by building",
-      description:
-        "Apply every lesson to small exercises and projects.",
-    },
-    {
-      icon: "💪",
-      title: "Learn from mistakes",
-      description:
-        "Errors are part of programming. Debugging helps you become a better developer.",
+      title: "HTML graduate",
+      description: "Complete all eight HTML lessons.",
+      earned: completedCount >= HTML_LESSON_COUNT,
+      icon: "🏆",
     },
   ];
 
   return (
-    <div className="min-h-screen bg-[#FFFAF3] p-5 pt-20 md:p-8">
-      <div className="mx-auto max-w-6xl space-y-12">
+    <div className="min-h-screen bg-[#FFFAF3] px-4 pb-10 pt-20 sm:px-6 md:px-8 md:pt-8">
+      <div className="mx-auto max-w-7xl space-y-10">
 
-        {/* Welcome and academy introduction */}
-        <section className="relative overflow-hidden rounded-3xl bg-[#42213D] p-7 text-white md:p-12">
-          <p className="text-sm font-semibold tracking-widest text-pink-200">
-            FAIDAT CODE ACADEMY
-          </p>
+        {/* Welcome banner */}
+        <section className="relative isolate overflow-hidden rounded-3xl bg-[#42213D] px-6 py-8 text-white shadow-lg shadow-[#42213D]/10 sm:px-9 sm:py-10 lg:px-11">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-16 -top-20 -z-10 h-64 w-64 rounded-full border-[30px] border-pink-300/10 sm:h-80 sm:w-80"
+          />
 
-          <h1 className="mt-4 max-w-3xl text-3xl font-bold leading-tight md:text-5xl">
-            Welcome to Code Garden 🌱
-            <br />
-            <span className="text-pink-200">
-              Your journey starts here.
-            </span>
-          </h1>
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -bottom-20 right-20 -z-10 h-48 w-48 rounded-full bg-pink-500/10 blur-3xl"
+          />
 
-          <p className="mt-5 max-w-2xl leading-7 text-white/80">
-            Every expert was once a beginner. This is your
-            space to explore technology, develop practical
-            skills, and learn how to turn ideas into real
-            websites. Start at your own pace and grow one
-            step at a time.
-          </p>
+          <div className="relative max-w-3xl">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-pink-600 text-xl">
+                🌱
+              </span>
 
-          <button
-            onClick={() => navigate("/courses/html")}
-            className="mt-7 rounded-xl bg-pink-600 px-6 py-3 font-semibold text-white transition hover:bg-pink-700"
+              <div>
+                <p className="text-xs font-bold tracking-[0.16em] text-pink-200 sm:text-sm">
+                  FAIDAT CODE ACADEMY
+                </p>
+                <p className="mt-1 text-xs text-white/60">
+                  LEARN · BUILD · GROW
+                </p>
+              </div>
+            </div>
+
+            <h1 className="mt-6 text-3xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-5xl">
+              Welcome to your
+              <br />
+              <span className="text-pink-200">
+                coding journey.
+              </span>
+            </h1>
+
+            <p className="mt-4 max-w-xl text-sm leading-7 text-white/75 sm:text-base">
+              Explore web development, strengthen your
+              problem-solving skills, and turn your ideas
+              into real projects. Learn at your own pace
+              and grow one step at a time.
+            </p>
+
+            <div className="mt-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-5">
+              <button
+                type="button"
+                onClick={() => navigate("/courses/html")}
+                className="inline-flex items-center gap-3 rounded-xl bg-pink-600 px-5 py-3 text-sm font-semibold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-pink-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink-200"
+              >
+                Explore learning paths
+                <span aria-hidden="true">→</span>
+              </button>
+
+              <p className="text-xs text-white/65 sm:text-sm">
+                Beginner-friendly · Learn by doing
+              </p>
+            </div>
+          </div>
+
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute bottom-8 right-10 hidden rotate-3 rounded-2xl border border-white/10 bg-white/5 px-5 py-4 font-mono text-sm leading-7 text-pink-200/80 lg:block"
           >
-            Begin Your Journey →
-          </button>
-
-          <p className="mt-4 text-sm text-white/60">
-            No previous coding experience required.
-          </p>
+            <p>&lt;learn&gt;</p>
+            <p className="pl-4 text-white/60">Build something</p>
+            <p>&lt;/learn&gt;</p>
+          </div>
         </section>
 
-        {/* What learners will learn */}
+        {/* Dashboard overview */}
         <section>
-          <p className="text-sm font-semibold tracking-wide text-pink-600">
-            YOUR LEARNING JOURNEY
-          </p>
+          <div className="mb-5">
+            <p className="text-xs font-bold tracking-[0.16em] text-pink-600">
+              YOUR LEARNING OVERVIEW
+            </p>
 
-          <h2 className="mt-2 text-2xl font-bold text-[#42213D] md:text-3xl">
-            What will you learn?
-          </h2>
+            <h2 className="mt-2 text-2xl font-bold text-[#42213D] sm:text-3xl">
+              Your next step starts here
+            </h2>
 
-          <p className="mt-3 max-w-3xl leading-7 text-[#65545F]">
-            Our learning paths take you from the foundations
-            of web development towards building websites of
-            your own. Choose a course to explore its
-            introduction and available lessons.
-          </p>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-[#65545F]">
+              Explore the available course, track your
+              progress, and discover the skills you will
+              develop along the way.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <article className="rounded-2xl border border-[#F0E3ED] bg-white p-5">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-[#65545F]">
+                  Available course
+                </span>
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 text-xl">
+                  📚
+                </span>
+              </div>
+
+              <p className="mt-3 text-3xl font-bold text-[#42213D]">
+                1
+              </p>
+
+              <p className="mt-1 text-xs text-[#65545F]">
+                HTML Fundamentals is ready to explore.
+              </p>
+            </article>
+
+            <article className="rounded-2xl border border-[#F0E3ED] bg-white p-5">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-[#65545F]">
+                  Lessons completed
+                </span>
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#D9F3E7] text-xl">
+                  ✓
+                </span>
+              </div>
+
+              <p className="mt-3 text-3xl font-bold text-[#42213D]">
+                {completedCount}
+                <span className="text-base font-medium text-[#65545F]">
+                  {" "}/ {HTML_LESSON_COUNT}
+                </span>
+              </p>
+
+              <p className="mt-1 text-xs text-[#65545F]">
+                Your recorded HTML lesson progress.
+              </p>
+            </article>
+
+            <article className="rounded-2xl border border-[#F0E3ED] bg-white p-5">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-[#65545F]">
+                  Course progress
+                </span>
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-pink-50 text-xl">
+                  📈
+                </span>
+              </div>
+
+              <p className="mt-3 text-3xl font-bold text-[#42213D]">
+                {progressPercentage}%
+              </p>
+
+              <div
+                className="mt-3 h-2 overflow-hidden rounded-full bg-[#F3E8F0]"
+                role="progressbar"
+                aria-label="HTML course completion"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={progressPercentage}
+              >
+                <div
+                  className="h-full rounded-full bg-pink-600 transition-all duration-500"
+                  style={{ width: `${progressPercentage}%` }}
+                />
+              </div>
+            </article>
+          </div>
+        </section>
+
+        {/* Learning paths */}
+        <section>
+          <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+            <div>
+              <p className="text-xs font-bold tracking-[0.16em] text-pink-600">
+                EXPLORE THE ACADEMY
+              </p>
+
+              <h2 className="mt-2 text-2xl font-bold text-[#42213D] sm:text-3xl">
+                Learning paths
+              </h2>
+
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-[#65545F]">
+                Build your skills progressively, from
+                webpage structure to design and
+                interactivity.
+              </p>
+            </div>
+
+            <span className="text-sm text-[#65545F]">
+              3 learning paths planned
+            </span>
+          </div>
 
           <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
             {courses.map((course) => (
               <article
                 key={course.id}
-                className="flex flex-col rounded-2xl border border-[#F0E3ED] bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-md"
+                className="flex flex-col rounded-2xl border border-[#F0E3ED] bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-md sm:p-6"
               >
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex items-start justify-between gap-3">
                   <div
-                    className={`flex h-14 w-14 items-center justify-center rounded-2xl text-3xl ${course.color}`}
+                    className={`flex h-14 w-14 items-center justify-center rounded-2xl text-3xl ${course.color} ${course.iconColor}`}
                   >
                     {course.icon}
                   </div>
 
-                  <span className="rounded-full bg-[#F8E6F0] px-3 py-1 text-xs font-semibold text-[#42213D]">
+                  <span
+                    className={`rounded-full px-3 py-1.5 text-[10px] font-bold tracking-wide ${
+                      course.available
+                        ? "bg-[#D9F3E7] text-[#287D61]"
+                        : "bg-[#F3E8F0] text-[#65545F]"
+                    }`}
+                  >
                     {course.tag}
                   </span>
                 </div>
 
-                <h3 className="mt-5 text-xl font-bold text-[#42213D]">
+                <p className="mt-5 text-xs font-semibold text-pink-600">
+                  {course.subtitle}
+                </p>
+
+                <h3 className="mt-1 text-xl font-bold text-[#42213D]">
                   {course.title}
                 </h3>
 
-                <p className="mt-2 text-sm leading-6 text-[#65545F]">
+                <p className="mt-3 flex-1 text-sm leading-6 text-[#65545F]">
                   {course.description}
                 </p>
 
-                <div className="mt-4 flex flex-wrap gap-2 text-xs text-[#65545F]">
-                  <span className="rounded-full bg-[#F8F2F6] px-3 py-2">
+                <div className="mt-5 flex flex-wrap gap-2">
+                  <span className="rounded-full bg-[#F8F2F6] px-3 py-2 text-xs text-[#65545F]">
                     {course.level}
                   </span>
 
-                  <span className="rounded-full bg-[#F8F2F6] px-3 py-2">
+                  <span className="rounded-full bg-[#F8F2F6] px-3 py-2 text-xs text-[#65545F]">
                     {course.lessons} planned lessons
                   </span>
                 </div>
 
-                <div className="mt-5 rounded-xl bg-[#FFFAF3] p-3">
-                  <p className="text-xs font-semibold text-pink-600">
-                    YOUR GOAL
+                <div className="mt-5 rounded-xl bg-[#FFFAF3] p-4">
+                  <p className="text-[10px] font-bold tracking-[0.14em] text-pink-600">
+                    LEARNING OUTCOME
                   </p>
 
-                  <p className="mt-1 text-sm text-[#42213D]">
+                  <p className="mt-2 text-sm leading-5 text-[#42213D]">
                     {course.outcome}
                   </p>
                 </div>
 
                 <button
-                  onClick={() => navigate(course.path)}
-                  className="mt-5 w-full rounded-xl border border-[#D63384] px-4 py-3 font-semibold text-[#D63384] transition hover:bg-pink-50"
+                  type="button"
+                  disabled={!course.available}
+                  onClick={() => {
+                    if (course.available) {
+                      navigate(course.path);
+                    }
+                  }}
+                  className={`mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition ${
+                    course.available
+                      ? "bg-[#42213D] text-white hover:bg-[#573050] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink-600"
+                      : "cursor-not-allowed border border-[#E8DDE6] bg-[#FAF7F9] text-[#8A7B87]"
+                  }`}
                 >
-                  Explore Course →
+                  {course.available
+                    ? "Explore course"
+                    : "Coming soon"}
+
+                  <span aria-hidden="true">
+                    {course.available ? "→" : "🔒"}
+                  </span>
                 </button>
               </article>
             ))}
           </div>
         </section>
 
-        {/* What learners can achieve */}
-        <section className="rounded-2xl border border-[#F0E3ED] bg-white p-6 md:p-8">
-          <p className="text-sm font-semibold tracking-wide text-pink-600">
-            YOUR FUTURE SKILLS
-          </p>
+        {/* Skills you will develop */}
+        <section className="rounded-3xl border border-[#F0E3ED] bg-white p-6 sm:p-8">
+          <div className="max-w-2xl">
+            <p className="text-xs font-bold tracking-[0.16em] text-pink-600">
+              YOUR FUTURE SKILLS
+            </p>
 
-          <h2 className="mt-2 text-2xl font-bold text-[#42213D] md:text-3xl">
-            What can you achieve?
-          </h2>
+            <h2 className="mt-2 text-2xl font-bold text-[#42213D] sm:text-3xl">
+              What you are working towards
+            </h2>
 
-          <p className="mt-3 max-w-3xl leading-7 text-[#65545F]">
-            With consistent learning and practice, you can
-            develop the skills to:
-          </p>
+            <p className="mt-3 text-sm leading-6 text-[#65545F]">
+              Each learning path contributes to a bigger
+              goal: giving you the skills to design, build,
+              and improve websites of your own.
+            </p>
+          </div>
 
           <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {[
-              "Understand how websites are built.",
-              "Create and style your own webpages.",
-              "Add interactive features with JavaScript.",
-              "Build projects for a beginner portfolio.",
-            ].map((goal) => (
-              <div key={goal} className="flex items-start gap-3">
+            {skills.map((skill) => (
+              <div key={skill} className="flex items-start gap-3">
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#D9F3E7] font-bold text-[#287D61]">
                   ✓
                 </span>
 
-                <p className="leading-6 text-[#42213D]">
-                  {goal}
+                <p className="text-sm leading-6 text-[#42213D]">
+                  {skill}
                 </p>
               </div>
             ))}
           </div>
         </section>
 
-        {/* The learner mindset */}
+        {/* Learning mindset */}
         <section>
-          <p className="text-sm font-semibold tracking-wide text-pink-600">
-            THE CODE GARDEN MINDSET
-          </p>
+          <div className="max-w-2xl">
+            <p className="text-xs font-bold tracking-[0.16em] text-pink-600">
+              THE CODE GARDEN MINDSET
+            </p>
 
-          <h2 className="mt-2 text-2xl font-bold text-[#42213D] md:text-3xl">
-            Learn patiently. Grow confidently.
-          </h2>
+            <h2 className="mt-2 text-2xl font-bold text-[#42213D] sm:text-3xl">
+              Learn with purpose
+            </h2>
 
-          <p className="mt-3 max-w-3xl leading-7 text-[#65545F]">
-            You don't need to be a genius to become a
-            developer. You need curiosity, practice,
-            patience, and the courage to keep going.
-          </p>
+            <p className="mt-3 text-sm leading-6 text-[#65545F]">
+              Becoming a developer is a process. Build
+              good habits, stay curious, and give yourself
+              room to improve.
+            </p>
+          </div>
 
           <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {mindset.map((item) => (
+            {mindset.map((item, index) => (
               <article
                 key={item.title}
-                className="rounded-2xl border border-[#F0E3ED] bg-white p-5"
+                className="rounded-2xl border border-[#F0E3ED] bg-white p-5 transition hover:border-pink-200 hover:shadow-sm sm:p-6"
               >
-                <span className="text-3xl">{item.icon}</span>
+                <div className="flex items-start gap-4">
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#F8F2F6] text-2xl">
+                    {item.icon}
+                  </span>
 
-                <h3 className="mt-3 font-bold text-[#42213D]">
-                  {item.title}
+                  <div>
+                    <p className="text-xs font-semibold text-pink-600">
+                      PRINCIPLE 0{index + 1}
+                    </p>
+
+                    <h3 className="mt-1 font-bold text-[#42213D]">
+                      {item.title}
+                    </h3>
+
+                    <p className="mt-2 text-sm leading-6 text-[#65545F]">
+                      {item.description}
+                    </p>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        {/* Progress and achievements */}
+        <section className="rounded-3xl bg-[#F3E8F0] p-6 sm:p-8">
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+            <div>
+              <p className="text-xs font-bold tracking-[0.16em] text-pink-600">
+                YOUR PROGRESS
+              </p>
+
+              <h2 className="mt-2 text-2xl font-bold text-[#42213D] sm:text-3xl">
+                Every lesson moves you forward.
+              </h2>
+
+              <p className="mt-3 max-w-xl text-sm leading-6 text-[#65545F]">
+                Your dashboard reflects the HTML lessons
+                recorded as completed on this device.
+                Keep practising to unlock your next
+                milestones.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => navigate("/courses/html/lessons")}
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-[#D63384] bg-white px-4 py-3 text-sm font-semibold text-[#D63384] transition hover:bg-pink-50"
+            >
+              View lessons <span aria-hidden="true">→</span>
+            </button>
+          </div>
+
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            {achievements.map((achievement) => (
+              <article
+                key={achievement.title}
+                className="rounded-2xl border border-white/80 bg-white p-5"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-2xl">
+                    {achievement.icon}
+                  </span>
+
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${
+                      achievement.earned
+                        ? "bg-[#D9F3E7] text-[#287D61]"
+                        : "bg-[#F8F2F6] text-[#65545F]"
+                    }`}
+                  >
+                    {achievement.earned
+                      ? "UNLOCKED"
+                      : "NOT YET"}
+                  </span>
+                </div>
+
+                <h3 className="mt-4 font-bold text-[#42213D]">
+                  {achievement.title}
                 </h3>
 
-                <p className="mt-2 text-sm leading-6 text-[#65545F]">
-                  {item.description}
+                <p className="mt-2 text-sm leading-5 text-[#65545F]">
+                  {achievement.description}
                 </p>
               </article>
             ))}
           </div>
         </section>
 
-        {/* Honest progress and achievements */}
-        <section className="rounded-2xl bg-[#F3E8F0] p-6 md:p-8">
-          <p className="text-sm font-semibold tracking-wide text-pink-600">
-            YOUR PROGRESS
-          </p>
+        {/* Closing message */}
+        <footer className="pb-2 pt-2 text-center">
+          <span className="text-3xl">🌱</span>
 
-          <h2 className="mt-2 text-2xl font-bold text-[#42213D]">
-            Every small step counts. 🏆
+          <h2 className="mt-3 text-xl font-bold text-[#42213D] sm:text-2xl">
+            Small steps. Real skills. Bigger possibilities.
           </h2>
 
-          <p className="mt-3 max-w-2xl leading-7 text-[#65545F]">
-            Your learning achievements will grow as you
-            complete lessons, practise your skills, and
-            pass assessments. Start learning to begin
-            building your record.
-          </p>
-
-          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="rounded-xl bg-white p-5">
-              <span className="text-2xl">📚</span>
-
-              <p className="mt-3 font-bold text-[#42213D]">
-                Lessons completed
-              </p>
-
-              <p className="mt-1 text-sm text-[#65545F]">
-                Progress tracking coming next.
-              </p>
-            </div>
-
-            <div className="rounded-xl bg-white p-5">
-              <span className="text-2xl">🏆</span>
-
-              <p className="mt-3 font-bold text-[#42213D]">
-                Achievements earned
-              </p>
-
-              <p className="mt-1 text-sm text-[#65545F]">
-                Your milestones will appear here.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* Final encouragement */}
-        <section className="pb-4 text-center">
-          <h2 className="text-2xl font-bold text-[#42213D]">
-            Ready to plant your first coding seed? 🌱
-          </h2>
-
-          <p className="mx-auto mt-3 max-w-2xl leading-7 text-[#65545F]">
-            Choose a course, explore its lessons, and take
-            your first step. You don't have to know it all
-            today; you just have to begin.
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-[#65545F]">
+            You do not need to know everything today.
+            Keep learning, keep experimenting, and let
+            each project help you grow.
           </p>
 
           <button
+            type="button"
             onClick={() => navigate("/courses/html")}
-            className="mt-6 rounded-xl bg-pink-600 px-6 py-3 font-semibold text-white transition hover:bg-pink-700"
+            className="mt-5 rounded-xl bg-pink-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-pink-700"
           >
-            Explore HTML Fundamentals →
+            Continue your journey →
           </button>
-        </section>
+        </footer>
 
       </div>
     </div>

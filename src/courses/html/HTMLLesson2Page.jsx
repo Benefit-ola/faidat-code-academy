@@ -1,78 +1,203 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 const COMPLETED_KEY = "faidat-html-completed-lessons";
 
-const HTMLLesson2Page = () => {
-  const navigate = useNavigate();
+const STARTER_CODE = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Personal Website</title>
+</head>
+<body>
+  <h1>Welcome to My Website</h1>
+  <p>I am learning how to build websites.</p>
+</body>
+</html>`;
 
-  const [answer1, setAnswer1] = useState("");
-  const [answer2, setAnswer2] = useState("");
-  const [checked1, setChecked1] = useState(false);
-  const [checked2, setChecked2] = useState(false);
+const QUESTIONS = [
+  {
+    question: "1. What does <!DOCTYPE html> do?",
+    options: [
+      "Creates a heading",
+      "Tells the browser to use modern HTML",
+      "Displays the page title",
+      "Creates the page body",
+    ],
+    answer: 1,
+    explanation:
+      "The declaration tells the browser to interpret the document using the modern HTML standard. It is not an ordinary HTML element.",
+  },
+  {
+    question: "2. Where should the <title> element go?",
+    options: [
+      "Inside <body>",
+      "Inside <p>",
+      "Inside <head>",
+      "After </html>",
+    ],
+    answer: 2,
+    explanation:
+      "The title belongs inside the head section. Its text usually appears in the browser tab.",
+  },
+  {
+    question: "3. Why do we use the viewport meta element?",
+    options: [
+      "To make every heading bold",
+      "To create a background colour",
+      "To add a navigation link",
+      "To help the page adapt to different screen widths",
+    ],
+    answer: 3,
+    explanation:
+      "The viewport setting helps the browser display the page at an appropriate width on phones and other devices.",
+  },
+  {
+    question: "4. Which statement about <head> and <body> is correct?",
+    options: [
+      "Both belong inside <html>",
+      "<html> belongs inside <body>",
+      "<head> must come after </html>",
+      "<body> contains the browser tab title",
+    ],
+    answer: 0,
+    explanation:
+      "The head and body are the two main sections of a standard HTML document. Both belong inside the html element.",
+  },
+];
 
-  const [completed, setCompleted] = useState(() => {
-    try {
-      const saved = JSON.parse(
-        localStorage.getItem(COMPLETED_KEY) || "[]"
-      );
+function readCompletedLessons() {
+  try {
+    const saved = JSON.parse(
+      localStorage.getItem(COMPLETED_KEY) || "[]"
+    );
 
-      return Array.isArray(saved) && saved.includes(2);
-    } catch {
-      return false;
-    }
-  });
+    return Array.isArray(saved) ? saved : [];
+  } catch {
+    return [];
+  }
+}
 
-  const question1Options = [
-    { value: "A", label: "<p>" },
-    { value: "B", label: "Hello, world!" },
-    { value: "C", label: "<p>Hello, world!</p>" },
-    { value: "D", label: "</p>" },
+function checkDocumentStructure(code) {
+  const hasDoctype = /<!doctype\s+html\s*>/i.test(code);
+  const hasHtml = /<html\b[^>]*>[\s\S]*<\/html\s*>/i.test(code);
+  const hasHead = /<head\b[^>]*>[\s\S]*<\/head\s*>/i.test(code);
+  const hasBody = /<body\b[^>]*>[\s\S]*<\/body\s*>/i.test(code);
+
+  const hasTitle =
+    /<title\b[^>]*>\s*\S[\s\S]*?<\/title\s*>/i.test(code);
+
+  const hasCharset =
+    /<meta\b[^>]*charset\s*=\s*["']?utf-8["']?[^>]*>/i.test(code);
+
+  const hasViewport =
+    /<meta\b[^>]*name\s*=\s*["']viewport["'][^>]*content\s*=\s*["'][^"']*width\s*=\s*device-width[^"']*["'][^>]*>/i.test(code) ||
+    /<meta\b[^>]*content\s*=\s*["'][^"']*width\s*=\s*device-width[^"']*["'][^>]*name\s*=\s*["']viewport["'][^>]*>/i.test(code);
+
+  const hasHeading =
+    /<h1\b[^>]*>\s*\S[\s\S]*?<\/h1\s*>/i.test(code);
+
+  const hasParagraph =
+    /<p\b[^>]*>\s*\S[\s\S]*?<\/p\s*>/i.test(code);
+
+  return {
+    hasDoctype,
+    hasHtml,
+    hasHead,
+    hasBody,
+    hasTitle,
+    hasCharset,
+    hasViewport,
+    hasHeading,
+    hasParagraph,
+  };
+}
+
+export default function HTMLLesson2Page() {
+  const [code, setCode] = useState(STARTER_CODE);
+  const [answers, setAnswers] = useState({});
+  const [quizSubmitted, setQuizSubmitted] = useState(false);
+  const [challengeChecked, setChallengeChecked] = useState(false);
+  const [completed, setCompleted] = useState(() =>
+    readCompletedLessons().includes(2)
+  );
+  const [saveError, setSaveError] = useState("");
+
+  const score = QUESTIONS.reduce(
+    (total, question, index) =>
+      total + (answers[index] === question.answer ? 1 : 0),
+    0
+  );
+
+  const hasPassedQuiz =
+    quizSubmitted && score === QUESTIONS.length;
+
+  const structure = checkDocumentStructure(code);
+
+  const requirements = [
+    {
+      label: "Begin with the HTML document declaration",
+      passed: structure.hasDoctype,
+    },
+    {
+      label: "Wrap the document in the html element",
+      passed: structure.hasHtml,
+    },
+    {
+      label: "Include a head section",
+      passed: structure.hasHead,
+    },
+    {
+      label: "Give the page a non-empty title",
+      passed: structure.hasTitle,
+    },
+    {
+      label: "Include UTF-8 character encoding",
+      passed: structure.hasCharset,
+    },
+    {
+      label: "Include the responsive viewport setting",
+      passed: structure.hasViewport,
+    },
+    {
+      label: "Include a body section",
+      passed: structure.hasBody,
+    },
+    {
+      label: "Add a non-empty h1 heading",
+      passed: structure.hasHeading,
+    },
+    {
+      label: "Add a non-empty paragraph",
+      passed: structure.hasParagraph,
+    },
   ];
 
-  const question2Options = [
-    {
-      value: "A",
-      label: "It starts a new paragraph.",
-    },
-    {
-      value: "B",
-      label: "It marks the end of a paragraph element.",
-    },
-    {
-      value: "C",
-      label: "It creates an image.",
-    },
-    {
-      value: "D",
-      label: "It makes text bold.",
-    },
-  ];
+  const hasCompleteStructure = requirements.every(
+    (requirement) => requirement.passed
+  );
 
-  const bothCorrect = answer1 === "C" && answer2 === "B";
+  const canCompleteLesson =
+    hasPassedQuiz &&
+    challengeChecked &&
+    hasCompleteStructure;
 
-  const handleComplete = () => {
-    if (!bothCorrect || completed) return;
+  function handleQuizSubmit() {
+    setQuizSubmitted(true);
+  }
+
+  function handleChallengeCheck() {
+    setChallengeChecked(true);
+  }
+
+  function handleCompleteLesson() {
+    if (!canCompleteLesson) return;
 
     try {
-      const saved = JSON.parse(
-        localStorage.getItem(COMPLETED_KEY) || "[]"
-      );
-
-      const existing = Array.isArray(saved) ? saved : [];
-
-      const updated = [
-        ...new Set([
-          ...existing.filter(
-            (id) =>
-              Number.isInteger(id) &&
-              id >= 1 &&
-              id <= 8
-          ),
-          2,
-        ]),
-      ];
+      const saved = readCompletedLessons();
+      const updated = [...new Set([...saved, 2])];
 
       localStorage.setItem(
         COMPLETED_KEY,
@@ -80,358 +205,533 @@ const HTMLLesson2Page = () => {
       );
 
       setCompleted(true);
+      setSaveError("");
     } catch {
-      window.alert(
-        "Unable to save progress. Please check your browser storage settings and try again."
+      setSaveError(
+        "Your work passed, but progress could not be saved. Check your browser storage settings."
       );
     }
-  };
+  }
 
-  const renderQuestion = ({
-    number,
-    question,
-    options,
-    answer,
-    setAnswer,
-    checked,
-    setChecked,
-    correctAnswer,
-    explanation,
-    wrongExplanation,
-    name,
-  }) => (
-    <div className="mt-6">
-      <h3 className="font-bold text-[#42213D]">
-        Question {number} of 2
-      </h3>
+  function handleCodeChange(event) {
+    setCode(event.target.value);
+    setChallengeChecked(false);
+    setSaveError("");
+  }
 
-      <p className="mt-2 font-semibold leading-7 text-[#65545F]">
-        {question}
-      </p>
+  function resetCode() {
+    setCode(STARTER_CODE);
+    setChallengeChecked(false);
+    setSaveError("");
+  }
 
-      <div className="mt-4 flex flex-col gap-3">
-        {options.map((option) => (
-          <label
-            key={option.value}
-            className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-colors ${
-              answer === option.value
-                ? "border-pink-500 bg-pink-50"
-                : "border-[#F0E3ED] hover:bg-pink-50"
-            }`}
-          >
-            <input
-              type="radio"
-              name={name}
-              value={option.value}
-              checked={answer === option.value}
-              onChange={(event) => {
-                setAnswer(event.target.value);
-                setChecked(false);
-              }}
-              className="mt-1 accent-pink-600"
-            />
+  const sectionClass =
+    "mb-8 rounded-2xl border border-[#F0E5E8] bg-white p-5 shadow-sm sm:p-7";
 
-            <span className="text-[#42213D]">
-              <strong>{option.value}.</strong>{" "}
-              {option.label}
-            </span>
-          </label>
-        ))}
-      </div>
+  const headingClass =
+    "mb-3 text-xl font-bold text-[#42213D] sm:text-2xl";
 
-      <button
-        type="button"
-        onClick={() => setChecked(true)}
-        disabled={!answer}
-        className="mt-4 rounded-xl bg-pink-600 px-5 py-3 font-semibold text-white transition-colors hover:bg-pink-700 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        Check Answer {number}
-      </button>
+  const bodyClass =
+    "leading-7 text-[#65545F]";
 
-      {checked && (
-        <div
-          className={`mt-4 rounded-xl p-4 ${
-            answer === correctAnswer
-              ? "bg-[#D9F3E7] text-[#287D61]"
-              : "bg-[#F3E8F0] text-[#42213D]"
-          }`}
-          role="status"
-          aria-live="polite"
-        >
-          {answer === correctAnswer ? (
-            <>
-              <p className="font-bold">Correct! 🎉</p>
-              <p className="mt-2 leading-6">{explanation}</p>
-            </>
-          ) : (
-            <>
-              <p className="font-bold">Not quite! 💗</p>
-              <p className="mt-2 leading-6">{wrongExplanation}</p>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setAnswer("");
-                  setChecked(false);
-                }}
-                className="mt-3 rounded-xl border border-pink-300 px-4 py-2 font-semibold text-pink-700 hover:bg-white"
-              >
-                Try Again
-              </button>
-            </>
-          )}
-        </div>
-      )}
-    </div>
-  );
+  const codeClass =
+    "rounded bg-[#FCE7F3] px-1.5 py-0.5 font-mono text-sm text-pink-800";
 
   return (
-    <div className="min-h-screen bg-[#FFFAF3] p-5 pt-20 md:p-10">
+    <main className="min-h-screen bg-[#FFFAF3] px-4 py-8 text-[#42213D] sm:px-8">
       <div className="mx-auto max-w-4xl">
-        <button
-          type="button"
-          onClick={() => navigate("/courses/html/lessons")}
-          className="mb-6 font-semibold text-pink-600 hover:text-pink-700"
+        <Link
+          to="/courses/html"
+          className="mb-6 inline-flex font-semibold text-pink-700 hover:text-pink-900"
         >
-          ← Back to HTML lessons
-        </button>
+          ← Back to HTML Lessons
+        </Link>
 
-        <p className="text-sm font-semibold text-pink-600">
-          FAIDAT CODE ACADEMY / HTML FUNDAMENTALS
-        </p>
-
-        <h1 className="mt-4 text-3xl font-bold text-[#42213D] md:text-4xl">
-          Lesson 2: HTML Elements and Tags
-        </h1>
-
-        <p className="mt-3 leading-7 text-[#65545F]">
-          Learn how HTML tags and elements work together to create
-          the content you see on a webpage.
-        </p>
-
-        {/* SECTION 1: HTML TAGS */}
-        <section className="mt-8 rounded-2xl border border-[#F0E3ED] bg-white p-6">
-          <h2 className="text-2xl font-bold text-[#42213D]">
-            1. What Are HTML Tags?
-          </h2>
-
-          <p className="mt-3 leading-7 text-[#65545F]">
-            HTML tags are special keywords written inside angle
-            brackets. They tell the browser how to structure content
-            on a webpage.
+        <header className="mb-8 rounded-3xl bg-[#42213D] p-6 text-white sm:p-9">
+          <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-pink-200">
+            HTML Fundamentals · Lesson 2
           </p>
 
-          <div className="mt-5 rounded-xl bg-[#42213D] p-5">
-            <p className="text-sm font-semibold text-pink-200">
-              EXAMPLE
-            </p>
-            <pre className="mt-3 overflow-x-auto text-white">
-              <code>{"<p>Hello, world!</p>"}</code>
-            </pre>
+          <h1 className="mb-3 text-3xl font-extrabold sm:text-4xl">
+            Building a Complete HTML Document
+          </h1>
+
+          <p className="max-w-2xl leading-7 text-[#FCE7F3]">
+            You already know how HTML tags create content. Now,
+            learn how to organize those elements into a complete
+            webpage that a browser can understand.
+          </p>
+
+          <div className="mt-5 inline-flex rounded-full bg-white/10 px-4 py-2 text-sm text-pink-100">
+            Beginner · Learn, practise and build
           </div>
+        </header>
 
-          <div className="mt-5 space-y-4">
-            <div>
-              <h3 className="font-bold text-[#42213D]">
-                Opening tag: {"<p>"}
-              </h3>
-              <p className="mt-1 leading-6 text-[#65545F]">
-                This tells the browser that a paragraph is beginning.
-              </p>
-            </div>
+        <section className={sectionClass}>
+          <h2 className={headingClass}>
+            1. From HTML elements to a complete document
+          </h2>
 
-            <div>
-              <h3 className="font-bold text-[#42213D]">
-                Content: Hello, world!
-              </h3>
-              <p className="mt-1 leading-6 text-[#65545F]">
-                This is the text that appears on the webpage.
-              </p>
-            </div>
+          <p className={bodyClass}>
+            In Lesson 1, you learned that HTML uses elements such
+            as headings and paragraphs to organize content.
+            But a complete webpage needs more than individual
+            elements. It also needs a document structure.
+          </p>
 
-            <div>
-              <h3 className="font-bold text-[#42213D]">
-                Closing tag: {"</p>"}
-              </h3>
-              <p className="mt-1 leading-6 text-[#65545F]">
-                The forward slash indicates the end of the paragraph
-                element.
-              </p>
-            </div>
+          <p className={`mt-3 ${bodyClass}`}>
+            Think of a document like a house. The content is what
+            people use and see, while the structure organizes
+            everything and gives it a proper place.
+          </p>
+
+          <div className="mt-5 rounded-xl bg-[#FCE7F3] p-4">
+            <p className="font-bold">Your goal in this lesson</p>
+            <p className="mt-2 leading-7 text-[#65545F]">
+              By the end, you should be able to explain the main
+              parts of an HTML document and build one yourself
+              without copying the starter template.
+            </p>
           </div>
         </section>
 
-        {/* SECTION 2: HTML ELEMENTS */}
-        <section className="mt-8 rounded-2xl border border-[#F0E3ED] bg-white p-6">
-          <h2 className="text-2xl font-bold text-[#42213D]">
-            2. What Is an HTML Element?
+        <section className={sectionClass}>
+          <h2 className={headingClass}>
+            2. Understand the document structure
           </h2>
 
-          <p className="mt-3 leading-7 text-[#65545F]">
-            An HTML element is the complete structure made up of an
-            opening tag, content, and usually a closing tag.
+          <p className={`mb-5 ${bodyClass}`}>
+            Each part has a different responsibility. Select
+            each explanation below as you study the structure.
           </p>
 
-          <div className="mt-5 rounded-xl bg-[#42213D] p-5">
-            <p className="text-sm font-semibold text-pink-200">
-              EXAMPLE
+          <div className="space-y-4">
+            <details className="rounded-xl border border-[#F0E5E8] p-4">
+              <summary className="cursor-pointer font-bold">
+                A. The document declaration
+              </summary>
+              <div className="mt-3">
+                <code className={codeClass}>
+                  {"<!DOCTYPE html>"}
+                </code>
+                <p className={`mt-3 ${bodyClass}`}>
+                  This belongs at the beginning of the document.
+                  It tells the browser to use modern HTML
+                  standards. It is a declaration, not a regular
+                  HTML element.
+                </p>
+              </div>
+            </details>
+
+            <details className="rounded-xl border border-[#F0E5E8] p-4">
+              <summary className="cursor-pointer font-bold">
+                B. The root html element
+              </summary>
+              <div className="mt-3">
+                <code className={codeClass}>
+                  {'<html lang="en"> ... </html>'}
+                </code>
+                <p className={`mt-3 ${bodyClass}`}>
+                  This wraps the main document sections.
+                  The <code className={codeClass}>lang</code>{" "}
+                  attribute identifies the document language.
+                  For an English page, we use{" "}
+                  <code className={codeClass}>lang="en"</code>.
+                </p>
+              </div>
+            </details>
+
+            <details className="rounded-xl border border-[#F0E5E8] p-4">
+              <summary className="cursor-pointer font-bold">
+                C. The head section
+              </summary>
+              <div className="mt-3">
+                <code className={codeClass}>
+                  {"<head> ... </head>"}
+                </code>
+                <p className={`mt-3 ${bodyClass}`}>
+                  The head contains information about the
+                  document, including its title, character
+                  encoding and viewport settings. Most of this
+                  information is not displayed as the main
+                  webpage content.
+                </p>
+              </div>
+            </details>
+
+            <details className="rounded-xl border border-[#F0E5E8] p-4">
+              <summary className="cursor-pointer font-bold">
+                D. The title element
+              </summary>
+              <div className="mt-3">
+                <code className={codeClass}>
+                  {"<title>My Website</title>"}
+                </code>
+                <p className={`mt-3 ${bodyClass}`}>
+                  The title belongs inside the head. It usually
+                  identifies your page in the browser tab. It is
+                  different from an{" "}
+                  <code className={codeClass}>h1</code> heading
+                  displayed inside the webpage.
+                </p>
+              </div>
+            </details>
+
+            <details className="rounded-xl border border-[#F0E5E8] p-4">
+              <summary className="cursor-pointer font-bold">
+                E. Character encoding
+              </summary>
+              <div className="mt-3">
+                <code className={codeClass}>
+                  {'<meta charset="UTF-8">'}
+                </code>
+                <p className={`mt-3 ${bodyClass}`}>
+                  UTF-8 supports a wide range of characters,
+                  including many languages and symbols. Adding
+                  this setting helps prevent text from being
+                  displayed incorrectly.
+                </p>
+              </div>
+            </details>
+
+            <details className="rounded-xl border border-[#F0E5E8] p-4">
+              <summary className="cursor-pointer font-bold">
+                F. The viewport setting
+              </summary>
+              <div className="mt-3">
+                <code className={codeClass}>
+                  {'<meta name="viewport" content="width=device-width, initial-scale=1.0">'}
+                </code>
+                <p className={`mt-3 ${bodyClass}`}>
+                  This helps the browser match the page width
+                  to the device width. It is important when
+                  building websites that work well on phones,
+                  tablets and computers.
+                </p>
+              </div>
+            </details>
+
+            <details className="rounded-xl border border-[#F0E5E8] p-4">
+              <summary className="cursor-pointer font-bold">
+                G. The body section
+              </summary>
+              <div className="mt-3">
+                <code className={codeClass}>
+                  {"<body> ... </body>"}
+                </code>
+                <p className={`mt-3 ${bodyClass}`}>
+                  This contains the main content of the page,
+                  such as headings, paragraphs, images, links
+                  and other elements visitors interact with.
+                </p>
+              </div>
+            </details>
+          </div>
+        </section>
+
+        <section className={sectionClass}>
+          <h2 className={headingClass}>
+            3. See how everything fits together
+          </h2>
+
+          <p className={`mb-4 ${bodyClass}`}>
+            Study the indentation. Notice that the head and
+            body are inside html, while the title and meta
+            elements are inside head.
+          </p>
+
+          <pre className="overflow-x-auto rounded-xl bg-[#2D1B2E] p-5 text-sm leading-7 text-pink-100">
+            <code>{STARTER_CODE}</code>
+          </pre>
+
+          <div className="mt-5 rounded-xl bg-[#FFFAF3] p-4">
+            <h3 className="mb-2 font-bold">
+              Why does indentation matter?
+            </h3>
+            <p className={bodyClass}>
+              Indentation makes it easier to see which elements
+              belong inside other elements. Browsers can often
+              display HTML even when indentation is poor, but
+              neatly organized code is easier to read, debug
+              and maintain.
             </p>
-            <pre className="mt-3 overflow-x-auto text-white">
-              <code>
-                {"<h1>Welcome to my website</h1>"}
-              </code>
-            </pre>
           </div>
 
-          <div className="mt-5 rounded-xl bg-[#D9F3E7] p-4">
-            <h3 className="font-bold text-[#287D61]">
-              Remember the difference
+          <div className="mt-4 rounded-xl border border-[#F0E5E8] p-4">
+            <h3 className="mb-2 font-bold">
+              Quick thinking question
             </h3>
+            <p className={bodyClass}>
+              If you want text to appear inside the webpage,
+              which section should contain it: head or body?
+            </p>
+          </div>
+        </section>
 
-            <ul className="mt-3 list-disc space-y-2 pl-5 text-[#285D4D]">
-              <li>
-                <strong>Tag:</strong> The opening or closing markup,
-                such as <code>{"<h1>"}</code>.
-              </li>
-              <li>
-                <strong>Element:</strong> The complete structure,
-                such as{" "}
-                <code>
-                  {"<h1>Welcome to my website</h1>"}
-                </code>.
-              </li>
+        <section className={sectionClass}>
+          <h2 className={headingClass}>
+            4. Knowledge check
+          </h2>
+
+          <p className={`mb-5 ${bodyClass}`}>
+            Answer all four questions. Submit your answers to
+            see your score and explanations. You need all four
+            correct to pass.
+          </p>
+
+          <div className="space-y-6">
+            {QUESTIONS.map((question, index) => (
+              <fieldset
+                key={question.question}
+                className="rounded-xl border border-[#F0E5E8] p-4"
+              >
+                <legend className="px-1 font-bold">
+                  {question.question}
+                </legend>
+
+                <div className="mt-3 space-y-3">
+                  {question.options.map((option, optionIndex) => (
+                    <label
+                      key={option}
+                      className="flex cursor-pointer items-start gap-3 rounded-lg bg-[#FFFAF3] p-3 hover:bg-pink-50"
+                    >
+                      <input
+                        type="radio"
+                        name={`question-${index}`}
+                        checked={answers[index] === optionIndex}
+                        onChange={() => {
+                          setAnswers((previous) => ({
+                            ...previous,
+                            [index]: optionIndex,
+                          }));
+                          setQuizSubmitted(false);
+                        }}
+                        className="mt-1 accent-pink-600"
+                      />
+                      <span>{option}</span>
+                    </label>
+                  ))}
+                </div>
+
+                {quizSubmitted && (
+                  <p
+                    className={`mt-3 text-sm leading-6 ${
+                      answers[index] === question.answer
+                        ? "text-green-700"
+                        : "text-red-700"
+                    }`}
+                  >
+                    {answers[index] === question.answer
+                      ? "Correct! "
+                      : `Not quite. The correct answer is ${question.options[question.answer]}. `}
+                    {question.explanation}
+                  </p>
+                )}
+              </fieldset>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={handleQuizSubmit}
+            disabled={
+              Object.keys(answers).length !== QUESTIONS.length
+            }
+            className="mt-5 rounded-xl bg-pink-600 px-5 py-3 font-bold text-white transition hover:bg-pink-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Submit Quiz
+          </button>
+
+          {quizSubmitted && (
+            <p
+              className="mt-4 font-semibold"
+              aria-live="polite"
+            >
+              Your score: {score}/{QUESTIONS.length}.{" "}
+              {hasPassedQuiz
+                ? "Excellent! You passed the quiz. 🎉"
+                : "Review the explanations, change your answers and try again."}
+            </p>
+          )}
+        </section>
+
+        <section className={sectionClass}>
+          <h2 className={headingClass}>
+            5. Coding challenge: Build your own webpage
+          </h2>
+
+          <p className={`mb-4 ${bodyClass}`}>
+            Now it is your turn. Create a complete HTML
+            document about yourself, your school or your
+            favourite hobby. You can use the starter code as a
+            reference, but try to make your own changes.
+          </p>
+
+          <div className="mb-5 rounded-xl bg-[#FCE7F3] p-4 text-sm leading-6 text-[#42213D]">
+            <p className="mb-2 font-bold">Your challenge checklist</p>
+            <ul className="list-disc space-y-1 pl-5">
+              <li>Start with the HTML document declaration.</li>
+              <li>Include the opening and closing html elements.</li>
+              <li>Keep the head and body inside html.</li>
+              <li>Add a meaningful title inside head.</li>
+              <li>Include UTF-8 character encoding.</li>
+              <li>Include the viewport setting.</li>
+              <li>Add your own h1 heading and paragraph inside body.</li>
+              <li>Keep your code neatly indented.</li>
             </ul>
           </div>
 
-          <p className="mt-5 leading-7 text-[#65545F]">
-            Some HTML elements are empty elements. For example,{" "}
-            <code className="rounded bg-[#F3E8F0] px-2 py-1">
-              {"<img>"}
-            </code>{" "}
-            displays an image and does not require a closing tag.
-          </p>
-        </section>
+          <label
+            htmlFor="html-document-editor"
+            className="mb-2 block font-bold"
+          >
+            Your HTML code
+          </label>
 
-        {/* KNOWLEDGE CHECK */}
-        <section className="mt-8 rounded-2xl border border-[#F0E3ED] bg-white p-6">
-          <p className="text-sm font-semibold text-pink-600">
-            LESSON 2 · PRACTICE
-          </p>
+          <textarea
+            id="html-document-editor"
+            value={code}
+            onChange={handleCodeChange}
+            spellCheck={false}
+            rows={18}
+            className="w-full rounded-xl border border-[#DCCBD7] bg-[#2D1B2E] p-4 font-mono text-sm leading-6 text-pink-100 outline-none focus:ring-2 focus:ring-pink-500"
+          />
 
-          <h2 className="mt-2 text-2xl font-bold text-[#42213D]">
-            Test Your Knowledge 🧠
-          </h2>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={handleChallengeCheck}
+              className="rounded-xl bg-[#42213D] px-5 py-3 font-bold text-white hover:bg-[#593052]"
+            >
+              Check My Structure
+            </button>
 
-          <p className="mt-2 leading-6 text-[#65545F]">
-            Answer both questions correctly to complete this lesson.
-          </p>
+            <button
+              type="button"
+              onClick={resetCode}
+              className="rounded-xl border border-[#DCCBD7] px-5 py-3 font-bold text-[#42213D] hover:bg-pink-50"
+            >
+              Reset Code
+            </button>
+          </div>
 
-          {renderQuestion({
-            number: 1,
-            name: "element-question-1",
-            question: "Which option is a complete HTML element?",
-            options: question1Options,
-            answer: answer1,
-            setAnswer: setAnswer1,
-            checked: checked1,
-            setChecked: setChecked1,
-            correctAnswer: "C",
-            explanation:
-              "A complete paragraph element contains an opening tag, its content, and a closing tag: <p>Hello, world!</p>.",
-            wrongExplanation:
-              "Look for the option that contains an opening tag, some content, and a closing tag.",
-          })}
+          {challengeChecked && (
+            <div
+              className={`mt-4 rounded-xl p-4 ${
+                hasCompleteStructure
+                  ? "bg-green-50 text-green-800"
+                  : "bg-amber-50 text-amber-900"
+              }`}
+              aria-live="polite"
+            >
+              <p className="font-bold">
+                {hasCompleteStructure
+                  ? "Great work! Your document passed the structure checks. 🎉"
+                  : "You are making progress! Check the items below."}
+              </p>
 
-          {renderQuestion({
-            number: 2,
-            name: "element-question-2",
-            question: "What does the closing tag </p> do?",
-            options: question2Options,
-            answer: answer2,
-            setAnswer: setAnswer2,
-            checked: checked2,
-            setChecked: setChecked2,
-            correctAnswer: "B",
-            explanation:
-              "The </p> tag marks the end of a paragraph element. The forward slash identifies it as a closing tag.",
-            wrongExplanation:
-              "Remember that the forward slash in </p> indicates the end of the paragraph element.",
-          })}
-
-          {/* COMPLETION */}
-          <div className="mt-8 border-t border-pink-100 pt-6">
-            {bothCorrect ? (
-              <>
-                <p className="font-bold text-[#287D61]">
-                  Excellent! Both answers are correct. 🎉
-                </p>
-
-                {completed ? (
-                  <p className="mt-3 rounded-xl bg-[#D9F3E7] p-4 text-[#287D61]">
-                    Lesson 2 Completed! ✓ Your progress is saved.
-                  </p>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleComplete}
-                    className="mt-4 rounded-xl bg-pink-600 px-6 py-3 font-semibold text-white hover:bg-pink-700"
+              <ul className="mt-3 space-y-2 text-sm">
+                {requirements.map((requirement) => (
+                  <li
+                    key={requirement.label}
+                    className="flex items-start gap-2"
                   >
-                    Mark Lesson as Complete
-                  </button>
-                )}
-              </>
-            ) : (
-              <p className="text-sm text-[#65545F]">
-                Answer both questions correctly to unlock lesson
-                completion.
+                    <span aria-hidden="true">
+                      {requirement.passed ? "✓" : "○"}
+                    </span>
+                    <span>{requirement.label}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <p className="mt-3 text-sm leading-6">
+                {hasCompleteStructure
+                  ? "All required elements were found. Review the preview to see how your page looks."
+                  : "Use this checklist to identify what is missing, edit your code and check again."}
+              </p>
+            </div>
+          )}
+
+          <h3 className="mb-3 mt-7 text-lg font-bold">
+            Live preview
+          </h3>
+
+          <p className={`mb-3 text-sm ${bodyClass}`}>
+            Your preview updates as you type. Scripts are
+            disabled in this isolated preview.
+          </p>
+
+          <iframe
+            title="Your HTML document preview"
+            srcDoc={code}
+            sandbox=""
+            className="h-64 w-full rounded-xl border border-[#DCCBD7] bg-white"
+          />
+
+          <button
+            type="button"
+            onClick={handleCompleteLesson}
+            disabled={!canCompleteLesson || completed}
+            className="mt-6 w-full rounded-xl bg-pink-600 px-5 py-3 font-bold text-white transition hover:bg-pink-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {completed
+              ? "Lesson 2 Completed ✓"
+              : "Complete Lesson 2"}
+          </button>
+
+          {!hasPassedQuiz && (
+            <p className="mt-2 text-sm text-[#65545F]">
+              Pass the quiz to unlock lesson completion.
+            </p>
+          )}
+
+          {hasPassedQuiz &&
+            (!challengeChecked || !hasCompleteStructure) && (
+              <p className="mt-2 text-sm text-[#65545F]">
+                Finish the coding challenge and click Check My
+                Structure before completing the lesson.
               </p>
             )}
-          </div>
+
+          {saveError && (
+            <p className="mt-3 text-sm text-red-700" role="alert">
+              {saveError}
+            </p>
+          )}
+
+          {completed && (
+            <div className="mt-4 rounded-xl bg-green-50 p-4 text-green-800">
+              <p className="font-bold">Lesson complete! 🎉</p>
+              <p className="mt-1 text-sm">
+                You are ready to learn more about headings and
+                paragraphs in Lesson 3.
+              </p>
+              <Link
+                to="/courses/html/lesson-3"
+                className="mt-3 inline-block font-bold underline"
+              >
+                Continue to Lesson 3 →
+              </Link>
+            </div>
+          )}
         </section>
 
-        {/* LESSON SUMMARY */}
-        <section className="mt-8 rounded-2xl bg-[#F3E8F0] p-6">
-          <h2 className="text-xl font-bold text-[#42213D]">
-            Remember 🌱
-          </h2>
-
-          <p className="mt-3 leading-7 text-[#65545F]">
-            Tags are the markup used to define HTML elements. An
-            element usually includes an opening tag, content, and a
-            closing tag. Understanding this difference will help you
-            write clearer HTML.
-          </p>
-
-          <button
-            type="button"
-            onClick={() => navigate("/courses/html/lessons")}
-            className="mt-5 rounded-xl border border-pink-300 px-5 py-3 font-semibold text-pink-700 transition hover:bg-white"
-          >
-            Return to Lesson List →
-          </button>
-        </section>
-
-        {/* LESSON NAVIGATION */}
-        <div className="mt-8 flex justify-between gap-4">
-          <button
-            type="button"
-            onClick={() => navigate("/courses/html/lesson-1")}
-            className="rounded-xl border border-[#42213D] px-5 py-3 font-semibold text-[#42213D] hover:bg-[#F3E8F0]"
+        <nav className="flex flex-wrap items-center justify-between gap-3 pb-8">
+          <Link
+            to="/courses/html/lesson-1"
+            className="rounded-xl border border-[#DCCBD7] px-4 py-3 font-semibold hover:bg-pink-50"
           >
             ← Previous Lesson
-          </button>
+          </Link>
 
-          <button
-            type="button"
-            onClick={() => navigate("/courses/html/lesson-3")}
-            className="rounded-xl bg-pink-600 px-5 py-3 font-semibold text-white hover:bg-pink-700"
+          <Link
+            to="/courses/html/lesson-3"
+            className="rounded-xl bg-[#42213D] px-4 py-3 font-semibold text-white hover:bg-[#593052]"
           >
-            Next Lesson →
-          </button>
-        </div>
+            Next Lesson: Headings and Paragraphs →
+          </Link>
+        </nav>
       </div>
-    </div>
+    </main>
   );
-};
-
-export default HTMLLesson2Page;
+}
